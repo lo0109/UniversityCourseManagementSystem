@@ -11,7 +11,8 @@ class AssessmentController extends Controller
      */
     public function index()
     {
-        //
+        $assessments = \App\Models\Assessment::all();
+        return view('assessment.index', ['assessments' => $items]);
     }
 
     /**

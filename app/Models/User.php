@@ -18,6 +18,8 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'userID',
+        'teacher',
         'email',
         'password',
     ];
@@ -44,4 +46,13 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function taughtCourses() {
+        return $this->hasMany(\App\Models\Course::class, 'teacherID', 'userID');
+    }
+    
+    public function enrolledCourses() {
+        return $this->belongsToMany(\App\Models\Course::class, 'enrollments', 'student_id', 'course_id', 'userID', 'course_id');
+    }
+    
 }

@@ -13,6 +13,14 @@ return new class extends Migration
     {
         Schema::create('peer_review', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('reviewee_id');
+            $table->unsignedBigInteger('reviewer_id');
+            $table->foreign('reviewee_id')->references('userID')->on('users')->onDelete('cascade');
+            $table->foreign('reviewer_id')->references('userID')->on('users')->onDelete('cascade');
+            $table->foreignId('assessment')->constrained('assessments')->onDelete('cascade');   
+            $table->foreignId('type_id')->constrained('peer_review_types')->onDelete('cascade');
+            $table->tinyInteger('score');
+            $table->text('comment');
             $table->timestamps();
         });
     }
@@ -22,6 +30,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('peer_review');
     }
 };

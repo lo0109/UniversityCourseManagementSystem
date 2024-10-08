@@ -5,12 +5,19 @@
     <form method="POST" action="{{ route('login') }}">
         @csrf
 
-        <!-- Email Address -->
+        <!-- userID -->
         <div>
+            <x-input-label for="userID" :value="__('UserID')" />
+            <x-text-input id="userID" class="block mt-1 w-full" type="number" name="userID" :value="old('userID')" required autofocus autocomplete="off" />
+            <x-input-error :messages="$errors->get('userID')" class="mt-2" />
+        </div>        
+
+        <!-- Email Address -->
+        <!-- <div>
             <x-input-label for="email" :value="__('Email')" />
             <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+        </div> -->
 
         <!-- Password -->
         <div class="mt-4">

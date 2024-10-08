@@ -11,8 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('assessment', function (Blueprint $table) {
+        Schema::create('assessments', function (Blueprint $table) {
             $table->id();
+            $table->string('course_id', 7);
+            $table->foreignId('typeID')->constrained('assessment_types')->onDelete('cascade');
+            $table->text('title');
+            $table->text('instruction');
+            $table->tinyInteger('score')->nullable();
+            $table->tinyInteger('maxScore');
+            $table->dateTime('deadline');
+            $table->tinyInteger('reviewNumber');
+            $table->unsignedBigInteger('student_id')->nullable();
+            $table->foreign('student_id')->references('userID')->on('users')->onDelete('cascade');
+            $table->foreign('course_id')->references('course_id')->on('courses')->onDelete('cascade');
             $table->timestamps();
         });
     }
@@ -22,6 +33,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('assessment');
+        Schema::disableForeignKeyConstraints();
+        Schema::dropIfExists('assessments');
     }
 };

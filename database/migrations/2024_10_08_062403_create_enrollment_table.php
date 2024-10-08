@@ -11,8 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('enrollment', function (Blueprint $table) {
+        Schema::create('enrollments', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('student_id');
+            $table->string('course_id', 7);
+            $table->tinyInteger('workshop');
+            $table->foreign('course_id')->references('course_id')->on('courses')->onDelete('cascade');
+            $table->foreign('student_id')->references('userID')->on('users')->onDelete('cascade');
+            $table->unique(['student_id', 'course_id']);
             $table->timestamps();
         });
     }
@@ -22,6 +28,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('enrollment');
+        Schema::disableForeignKeyConstraints();
+        Schema::dropIfExists('enrollments');
     }
 };

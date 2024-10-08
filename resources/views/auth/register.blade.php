@@ -9,12 +9,26 @@
             <x-input-error :messages="$errors->get('name')" class="mt-2" />
         </div>
 
+
+        <!-- userID -->
+        <div>
+            <x-input-label for="userID" :value="__('UserID')" />
+            <select id="teacher" name="teacher" class="block mt-1 w-full" required autofocus>
+                <option value="1" {{ old('teacher') == 1 ? 'selected' : '' }}>{{ __('Teacher') }}</option>
+                <option value="0" {{ old('teacher') == 0 ? 'selected' : '' }}>{{ __('Student') }}</option>
+            </select>
+            <x-input-error :messages="$errors->get('teacher')" class="mt-2" />
+            <x-text-input id="userID" class="block mt-1 w-full" type="number" name="userID" :value="old('userID')" required autofocus autocomplete="name" />
+            <x-input-error :messages="$errors->get('userID')" class="mt-2" />
+        </div>
+
+        
         <!-- Email Address -->
-        <div class="mt-4">
+        <!-- <div class="mt-4">
             <x-input-label for="email" :value="__('Email')" />
             <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+        </div> -->
 
         <!-- Password -->
         <div class="mt-4">
