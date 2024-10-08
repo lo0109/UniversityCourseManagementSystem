@@ -36,7 +36,11 @@ class AssessmentController extends Controller
      */
     public function show(string $id)
     {
-        //
+        // Find the assessment by its ID
+        $assessment = Assessment::findOrFail($id);
+
+        // Return the view with the assessment details
+        return view('assessments.show', compact('assessment'));
     }
 
     /**

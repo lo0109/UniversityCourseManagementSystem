@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('description');
             $table->boolean('online');
             $table->tinyInteger('workshop');
-            $table->unsignedBigInteger('teacherID');
+            $table->unsignedBigInteger('teacherID')->nullable();
             $table->foreign('teacherID')->references('userID')->on('users')->onDelete('cascade');
             $table->timestamps();
         });

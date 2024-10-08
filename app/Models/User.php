@@ -52,7 +52,8 @@ class User extends Authenticatable
     }
     
     public function enrolledCourses() {
-        return $this->belongsToMany(\App\Models\Course::class, 'enrollments', 'student_id', 'course_id', 'userID', 'course_id');
+        return $this->belongsToMany(\App\Models\Course::class, 'enrollments', 'student_id', 'course_id', 'userID', 'course_id')
+        ->withPivot('workshop');  // Include the workshop field from the pivot table
     }
     
 }

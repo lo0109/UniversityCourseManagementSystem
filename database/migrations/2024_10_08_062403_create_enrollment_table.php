@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('student_id');
             $table->string('course_id', 7);
-            $table->tinyInteger('workshop');
+            $table->tinyInteger('workshop')->nullable();
             $table->foreign('course_id')->references('course_id')->on('courses')->onDelete('cascade');
             $table->foreign('student_id')->references('userID')->on('users')->onDelete('cascade');
             $table->unique(['student_id', 'course_id']);
