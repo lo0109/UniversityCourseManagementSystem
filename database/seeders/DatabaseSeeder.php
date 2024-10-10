@@ -9,6 +9,10 @@ use Database\Seeders\AssessmentTypeSeeder;
 use Database\Seeders\PeerReviewTypeSeeder;
 use Database\Seeders\CourseSeeder;
 use Database\Seeders\EnrollmentSeeder;
+use Database\Seeders\AssessmentSeeder;
+use Database\Seeders\PeerReviewSeeder;
+use App\Models\Course;
+use App\Models\Enrollment;
 
 
 class DatabaseSeeder extends Seeder
@@ -37,9 +41,28 @@ class DatabaseSeeder extends Seeder
         $this->call(AssessmentTypeSeeder::class);
         //seed peer review types
         $this->call(PeerReviewTypeSeeder::class);
-        //seed test courses
-        $this->call(CourseSeeder::class);
+
         //seed test enrollements
         $this->call(EnrollmentSeeder::class);
+        //seed test courses
+        $this->call(CourseSeeder::class);
+        //seed assesments
+        $this->call(AssessmentSeeder::class);
+        //seed peer reviews
+        $this->call(PeerReviewSeeder::class);
+
+        // Enroll selected students into workshop 2 for each course
+        $students = [240012, 240013, 240014, 240015, 240016];
+        $courses = Course::pluck('course_id')->toArray();
+
+        foreach ($courses as $courseId) {
+            foreach ($students as $studentId) {
+                Enrollment::create([
+                    'student_id' => $studentId,
+                    'course_id' => $courseId,
+                    'workshop' => 2,
+                ]);
+            }
+        }
     }
 }

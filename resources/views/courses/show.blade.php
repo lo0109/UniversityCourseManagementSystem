@@ -11,16 +11,63 @@
             <h5 class="card-title">Course ID: {{ $course->course_id }}</h5>
             <p class="card-text">{{ $course->description }}</p>
             <p><strong>Online: </strong>{{ $course->online ? 'Yes' : 'No' }}</p>
-            <p><strong>How many Workshop a week: </strong>{{ $course->workshop }}</p>
+            <p><strong>How many Workshops a week: </strong>{{ $course->workshop }}</p>
+            
+            <!-- Display the number of people enrolled in the course -->
+            <p><strong>Number of Students Enrolled: </strong>{{ $course->enrollments->count() }}</p>
 
             <!-- Workshop section -->
             @auth
                 @if (Auth::user()->teacher)
-                    <p><strong>Workshop: </strong>{{ $course->workshop }}</p>
+                    <h3 class="mt-4">Workshops</h3>
+                    <table class="table mt-3">
+                        <thead>
+                            <tr>
+                                <th>Workshop Day</th>
+                                <th>Number of Students</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for ($i = 1; $i <= $course->workshop; $i++)
+                                <tr>
+                                    <td>
+                                        @if ($i == 1) Monday 
+                                        @elseif ($i == 2) Tuesday
+                                        @elseif ($i == 3) Wednesday
+                                        @elseif ($i == 4) Thursday
+                                        @elseif ($i == 5) Friday
+                                        @endif
+                                    </td>
+                                    <td>{{ $course->enrollments->where('workshop', $i)->count() }} students</td>
+                                    <td>
+                                        <!-- Only show View button if the user is the course's teacher -->
+                                        @if ($course->teacherID == Auth::user()->userID)
+                                            
+                                        <!-- THIS ONE NOT WORKING ??? <a href="{{ route('workshops.show', ['course' => $course->course_id, 'workshop' => $i]) }}" class="btn btn-info">View</a> -->
+                                            <a href="{{ url('workshops/show') }}?course={{ $course->course_id }}&workshop={{ $i }}" class="btn btn-info">View</a>
+                                            @else
+                                            <span class="text-muted">Not available</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endfor
+                        </tbody>
+                    </table> 
+
+                    <!-- Display Edit or Teach This Course button -->
+                    @if ($course->teacherID == Auth::user()->userID)
+                        <a href="{{ route('courses.edit', $course->course_id) }}" class="btn btn-warning mt-3">Edit</a>
+                    @elseif (is_null($course->teacherID))
+                        <form action="{{ route('courses.teach', $course->course_id) }}" method="POST" style="display:inline;">
+                            @csrf
+                            <button type="submit" class="btn btn-success mt-3">Teach this course</button>
+                        </form>
+                    @endif
                 @else
                     <p><strong>Workshop: </strong>
-                        @if($enrollment)
-                            <!-- If the student is already enrolled, show the workshop number and day -->
+                        @if ($enrollment)
+                            <!-- Show workshop number, day, and number of students if already enrolled -->
                             {{ $enrollment->pivot->workshop }} - 
                             @if ($enrollment->pivot->workshop == 1) Monday 
                             @elseif ($enrollment->pivot->workshop == 2) Tuesday
@@ -28,29 +75,27 @@
                             @elseif ($enrollment->pivot->workshop == 4) Thursday
                             @elseif ($enrollment->pivot->workshop == 5) Friday
                             @endif
+                            ({{ $course->enrollments->where('workshop', $enrollment->pivot->workshop)->count() }} students)
                         @else
-                            <!-- Show dropdown to select workshop if not already enrolled -->
+                            <!-- Show radio buttons to select workshop if not already enrolled -->
                             <form action="{{ route('courses.addCourses', $course->course_id) }}" method="POST">
                                 @csrf
                                 <div class="form-group">
-                                    <label for="workshop">Select Workshop Day:</label>
-                                    <select name="workshop" id="workshop" class="form-control" required>
-                                        @if($course->workshop >= 1)
-                                            <option value="1">Monday</option>
-                                        @endif
-                                        @if($course->workshop >= 2)
-                                            <option value="2">Tuesday</option>
-                                        @endif
-                                        @if($course->workshop >= 3)
-                                            <option value="3">Wednesday</option>
-                                        @endif
-                                        @if($course->workshop >= 4)
-                                            <option value="4">Thursday</option>
-                                        @endif
-                                        @if($course->workshop >= 5)
-                                            <option value="5">Friday</option>
-                                        @endif
-                                    </select>
+                                    <label>Select Workshop Day:</label>
+                                    @for ($i = 1; $i <= $course->workshop; $i++)
+                                        <div class="form-check">
+                                            <input type="radio" class="form-check-input" name="workshop" value="{{ $i }}" required>
+                                            <label class="form-check-label">
+                                                @if ($i == 1) Monday 
+                                                @elseif ($i == 2) Tuesday
+                                                @elseif ($i == 3) Wednesday
+                                                @elseif ($i == 4) Thursday
+                                                @elseif ($i == 5) Friday
+                                                @endif
+                                                ({{ $course->enrollments->where('workshop', $i)->count() }} students)
+                                            </label>
+                                        </div>
+                                    @endfor
                                 </div>
                                 <button type="submit" class="btn btn-success mt-3">Enroll</button>
                             </form>
@@ -61,32 +106,47 @@
         </div>
     </div>
 
+    <!-- Button for adding a new assessment -->
+    @auth
+        @if (Auth::user()->teacher && $course->teacherID == Auth::user()->userID)
+            <!-- <a href="{{ route('assessments.create', ['course' => $course->course_id]) }}" class="btn btn-success mt-4">Add New Assessment</a> -->
+            <a href="{{ url('courses/' . $course->course_id . '/assessments/create') }}" class="btn btn-success mt-4">Add New Assessment</a>
+        @endif
+    @endauth
+
     <!-- Assessment section: Always visible -->
     <h2 class="mt-5">Assessments</h2>
-    @if($assessments->isEmpty())
+    @if ($assessments->isEmpty())
         <p>No assessments available for this course.</p>
     @else
         <table class="table mt-3">
             <thead>
                 <tr>
-                    <th>Assessment ID</th>
+                    <th>Assessment Type</th>
                     <th>Title</th>
                     <th>Max Score</th>
                     <th>Due Date</th>
+                    <th>Mark</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($assessments as $assessment)
+                @foreach ($assessments as $assessment)
                     <tr>
-                        <td>{{ $assessment->id }}</td>
+                        <td>{{ $assessment->type->type ?? 'N/A' }}</td>
                         <td>{{ $assessment->title }}</td>
                         <td>{{ $assessment->maxScore }}</td>
                         <td>{{ $assessment->deadline }}</td>
                         <td>
-                            <!-- Show "View" button only if the student is enrolled -->
-                            @if($enrollment)
-                                <a href="{{ route('assessments.view', $assessment->id) }}" class="btn btn-info">View</a>
+                            @if (Auth::check() && !Auth::user()->teacher)
+                                {{ $assessment->score ?? 'Not graded' }}
+                            @else
+                                N/A
+                            @endif
+                        </td>
+                        <td>
+                            @if ($enrollment || Auth::user()->teacher)
+                                <a href="{{ route('assessments.show', $assessment->id) }}" class="btn btn-info">View</a>
                             @else
                                 <span class="text-muted">Enroll to view</span>
                             @endif
@@ -97,6 +157,6 @@
         </table>
     @endif
 
-    <a href="{{route('courses.index')}}" class="btn btn-primary mt-3">Back to Courses</a>
+    <a href="{{ route('courses.index') }}" class="btn btn-primary mt-3">Back to Courses</a>
 </div>
 @endsection

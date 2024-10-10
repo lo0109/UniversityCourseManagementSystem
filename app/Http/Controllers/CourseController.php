@@ -34,8 +34,8 @@ class CourseController extends Controller
      */
     public function courseToAdd()
     {
+        // Get the authenticated user
         $user = Auth::user();
-
         // Get courses the user is either teaching or enrolled in
         $enrolledOrTaughtCourses = $user->enrolledCourses->pluck('course_id')->merge($user->taughtCourses->pluck('course_id'));
 
@@ -81,6 +81,24 @@ class CourseController extends Controller
         }
     }
 
+    // teach a course
+    public function teach($id)
+    {
+        $user = Auth::user();
+        $course = Course::findOrFail($id);
+    
+        if (!$user->teacher) {
+            return redirect()->back()->with('error', 'Only teachers can teach a course.');
+        }
+    
+        // Assign the current user as the teacher
+        $course->teacherID = $user->userID;
+        $course->save();
+    
+        return redirect()->route('courses.show', $course->course_id)->with('success', 'You are now the teacher of this course.');
+    }
+    
+    
     /**
      * Show the form for creating a new resource.
      */
@@ -94,7 +112,20 @@ class CourseController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'course_id' => 'required|string|max:7|unique:courses,course_id',
+            'name' => 'required|string|max:20',
+            'description' => 'required|string',
+            'online' => 'required|boolean',
+            'workshop' => 'required|integer|min:1|max:5',
+            'teacherID' => 'nullable|exists:users,userID',
+        ]);
+    
+        // Create the course and store it in a variable
+        $course = Course::create($request->all());
+    
+        // Redirect to the course detail page with a success message
+        return redirect()->route('courses.show', ['course' => $course->course_id])->with('success', 'Course created successfully.');
     }
 
     /**
@@ -128,7 +159,11 @@ class CourseController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        if (!Auth::check() || !Auth::user()->teacher) {
+            return redirect()->back()->with('error', 'You do not have permission to access this page.');
+        } else {        
+            $course = Course::findOrFail($id);
+            return view('courses.edit', compact('course'));}
     }
 
     /**
@@ -136,7 +171,25 @@ class CourseController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $course = Course::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:20',
+            'description' => 'required|string',
+            'online' => 'required|boolean',
+            'workshop' => 'required|integer|min:1|max:5',
+        ]);
+
+        // Update the course details
+        $course->update([
+            'name' => $request->input('name'),
+            'description' => $request->input('description'),
+            'online' => $request->input('online'),
+            'workshop' => $request->input('workshop'),
+        ]);
+
+        // Redirect to the course detail page with a success message
+        return redirect()->route('courses.show', $id)->with('success', 'Course updated successfully.');
     }
 
     /**

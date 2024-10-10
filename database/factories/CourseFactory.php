@@ -21,7 +21,7 @@ class CourseFactory extends Factory
             'course_id' => 'ICT' . $this->faker->unique()->randomNumber(4, true),  // Unique course ID
             'name' => 'Course '.$this->faker->unique()->randomNumber(1),  // Course name
             'description' => 'Course Description'.$this->faker->paragraph(1),  // Course description
-            'workshop' => $this->faker->numberBetween(1,5),  // Random number between 1 and 5
+            'workshop' => $this->faker->numberBetween(2,5),  // Random number between 1 and 5
             'online' => $this->faker->boolean(),  // Random boolean for online
             'teacherID' => User::where('teacher', true)->inRandomOrder()->first()->userID,  // Assign a teacher ID
         ];

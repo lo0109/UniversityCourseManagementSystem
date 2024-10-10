@@ -11,16 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('peer_review', function (Blueprint $table) {
+        Schema::create('peer_reviews', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('reviewee_id');
             $table->unsignedBigInteger('reviewer_id');
             $table->foreign('reviewee_id')->references('userID')->on('users')->onDelete('cascade');
             $table->foreign('reviewer_id')->references('userID')->on('users')->onDelete('cascade');
-            $table->foreignId('assessment')->constrained('assessments')->onDelete('cascade');   
-            $table->foreignId('type_id')->constrained('peer_review_types')->onDelete('cascade');
-            $table->tinyInteger('score');
-            $table->text('comment');
+            $table->foreignId('assessment_id')->constrained('assessments')->onDelete('cascade');
+            $table->foreignId('peer_review_type_id')->nullable()->constrained('peer_review_types')->onDelete('cascade'); // Set peer_review_type from assessment
+            $table->tinyInteger('score')->nullable();
+            $table->tinyInteger('group')->nullable();
+            $table->text('comment')->nullable();
             $table->timestamps();
         });
     }
@@ -31,6 +32,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('peer_review');
+        Schema::dropIfExists('peer_reviews');
     }
 };

@@ -55,5 +55,9 @@ class User extends Authenticatable
         return $this->belongsToMany(\App\Models\Course::class, 'enrollments', 'student_id', 'course_id', 'userID', 'course_id')
         ->withPivot('workshop');  // Include the workshop field from the pivot table
     }
+
+    public function enrollments()    {
+        return $this->hasMany(Enrollment::class, 'student_id', 'userID');
+    }
     
 }
