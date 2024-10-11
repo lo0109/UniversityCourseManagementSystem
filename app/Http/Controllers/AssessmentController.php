@@ -10,6 +10,7 @@ use App\Models\PeerReviewType;
 use App\Models\Course;
 use App\Models\AssessmentMark;
 use App\Models\User;
+use Carbon\Carbon;
 
 class AssessmentController extends Controller
 {
@@ -64,6 +65,9 @@ class AssessmentController extends Controller
             $validatedData['peer_review_type'] = null;
         }
 
+        // Format the deadline to "Y-m-d H:i:s"
+        $formattedDeadline = Carbon::parse($request->input('deadline'))->format('Y-m-d H:i:s');
+
         // Create the assessment
         Assessment::create([
             'course_id' => $courseId,
@@ -71,7 +75,7 @@ class AssessmentController extends Controller
             'title' => $validatedData['title'],
             'instruction' => $validatedData['instruction'],
             'maxScore' => $validatedData['maxScore'],
-            'deadline' => $validatedData['deadline'],
+            'deadline' => $formattedDeadline,
             'reviewNumber' => $validatedData['reviewNumber'],
             'peer_review_type_id' => $validatedData['peer_review_type'],
         ]);
@@ -163,7 +167,7 @@ class AssessmentController extends Controller
         'instruction' => 'required|string',
         'maxScore' => 'required|integer|between:1,100',
         'deadline' => 'required|date',
-        'reviewNumber' => 'required|integer|min:1',
+        'reviewNumber' => 'integer|min:1',
         'peerReviewType' => 'nullable|exists:peer_review_types,id',
     ]);
 
@@ -175,15 +179,20 @@ class AssessmentController extends Controller
     $assessment->title = $request->input('title');
     $assessment->instruction = $request->input('instruction');
     $assessment->maxScore = $request->input('maxScore');
-    $assessment->deadline = $request->input('deadline');
-    $assessment->reviewNumber = $request->input('reviewNumber');
 
+    // Format the deadline to "Y-m-d H:i:s"
+    $formattedDeadline = Carbon::parse($request->input('deadline'))->format('Y-m-d H:i');
+    $assessment->deadline = $formattedDeadline;
+
+ 
     // If the typeID is 1 (peer review), update the peer_review_type_id
     if ($assessment->typeID == 1) {
+        $assessment->reviewNumber = $request->input('reviewNumber');
         $assessment->peer_review_type_id = $request->input('peerReviewType');
     } else {
         // If typeID is not 1, set peer_review_type_id to null
         $assessment->peer_review_type_id = null;
+        $assessment->reviewNumber = null;
     }
 
     // Save the assessment
@@ -205,12 +214,16 @@ class AssessmentController extends Controller
      */
     public function destroy(string $id)
     {
-        // Find the assessment by ID and delete it
+        // Find the assessment by ID
         $assessment = Assessment::findOrFail($id);
+        $courseId = $assessment->course_id; // Store the course ID before deletion
+
+        // Delete the assessment
         $assessment->delete();
 
+
         // Redirect to the assessments list with a success message
-        return redirect()->route('assessments.index')->with('success', 'Assessment deleted successfully.');
+        return redirect()->route('courses.show', $courseId)->with('success', 'Assessment deleted successfully.');
     }
 
     public function updateScores(Request $request, $assessmentId)

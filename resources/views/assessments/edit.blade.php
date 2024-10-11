@@ -36,18 +36,20 @@
             <input type="datetime-local" class="form-control" id="deadline" name="deadline"
                    value="{{ old('deadline', isset($assessment->deadline) ? date('Y-m-d\TH:i', strtotime($assessment->deadline)) : '') }}" required>
         </div>
-
-        <div class="mb-3">
-            <label for="reviewNumber" class="form-label">Number of Reviews Required</label>
-            <input type="number" class="form-control" id="reviewNumber" name="reviewNumber" value="{{ old('reviewNumber', $assessment->reviewNumber) }}" min="1" required>
-        </div>
-
+        
         <div class="mb-3">
             <label for="instruction" class="form-label">Instructions</label>
             <textarea class="form-control" id="instruction" name="instruction" required>{{ old('instruction', $assessment->instruction) }}</textarea>
         </div>
 
         <!-- Peer Review Type, if applicable -->
+
+        <div class="mb-3" id="peerReviewTypeSection" style="{{ $assessment->typeID == 1 ? '' : 'display:none;' }}">
+            <label for="reviewNumber" class="form-label">Number of Reviews Required</label>
+            <input type="number" class="form-control" id="reviewNumber" name="reviewNumber" value="{{ old('reviewNumber', $assessment->reviewNumber) }}" min="1">
+        </div>
+
+
         <div class="mb-3" id="peerReviewTypeSection" style="{{ $assessment->typeID == 1 ? '' : 'display:none;' }}">
             <label for="peerReviewType" class="form-label">Peer Review Type</label>
             <select class="form-select" id="peerReviewType" name="peerReviewType">
