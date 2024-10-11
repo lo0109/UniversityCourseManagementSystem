@@ -16,7 +16,13 @@
                 });
             @endphp
             <p><strong>Assessment type: </strong>{{ $assessment->type->type ?? 'N/A' }}</p>
-            <p><strong>Your mark: </strong>{{ $userMark->score ?? 'Pending' }}/{{ $assessment->maxScore }}</p>
+            @auth
+                @if (Auth::user()->teacher)
+                    <p><strong>Max mark: </strong>{{ $assessment->maxScore }}</p>
+                @else
+                    <p><strong>Your mark: </strong>{{ $userMark->score ?? 'Pending' }}/{{ $assessment->maxScore }}</p>
+                @endif
+            @endauth
             <p><strong>Due Date: </strong>{{ $assessment->deadline }}</p>
             <p><strong>Instructions: </strong>{{ $assessment->instruction }}</p>
             <p><strong>Number of reviews required: </strong>{{ $assessment->reviewNumber }}</p>
@@ -46,7 +52,7 @@
                         @foreach ($students as $student)
                             <li>{{ $student->name }}</li>
                             @php
-                                $studentMark = $assessment->assessmentMarks->firstWhere('student_id', $student->id);
+                                $studentMark = $assessment->assessmentMarks->firstWhere('student_id', $student->userID);
                             @endphp
 
                             @if($studentMark && $studentMark->score !== null)
@@ -56,7 +62,7 @@
                                     @csrf
                                     @method('PUT')
                                     <!-- Input field for score -->
-                                    <input type="number" name="scores[{{ $student->id }}]" 
+                                    <input type="number" name="scores[{{ $student->userID }}]" 
                                         min="0" max="{{ $assessment->maxScore }}" 
                                         placeholder="0-{{ $assessment->maxScore }}" 
                                         required style="width: 70px;">

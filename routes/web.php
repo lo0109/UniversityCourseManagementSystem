@@ -64,7 +64,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/assessments/{assessment_id}/peer-reviews/{review_id}/score', [PeerReviewController::class, 'updateScore'])->name('peer_reviews.update_score');
 
     // Update the scores for an assessment
-    Route::put('/assessments/{assessment}/update-scores', [AssessmentController::class, 'updateScores'])->name('assessments.update_scores');
+    Route::put('/assessments/{id}/update-scores', [AssessmentController::class, 'updateScores'])->name('assessments.update_scores');
 
     // Create an assessment for a specific course
     Route::get('/courses/{course}/assessments/create', [AssessmentController::class, 'create'])->name('assessments.create');

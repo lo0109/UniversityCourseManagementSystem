@@ -228,24 +228,23 @@ class AssessmentController extends Controller
 
     public function updateScores(Request $request, $assessmentId)
     {
-        // Retrieve the assessment
-        $assessment = Assessment::findOrFail($assessmentId);
-
-        // Validate the request to ensure scores are provided
+        // Validate the input
         $request->validate([
             'scores' => 'required|array',
-            'scores.*' => 'nullable|numeric|min:0|max:' . $assessment->maxScore,
+            'scores.*' => 'numeric|min:0|max:' . Assessment::findOrFail($assessmentId)->maxScore,
         ]);
-
-        // Iterate through the scores and update or create a record in the AssessmentMark table
-        foreach ($request->input('scores') as $reviewerId => $score) {
+    
+        // Loop through the scores and update or create records
+        foreach ($request->input('scores') as $userId => $score) {
             AssessmentMark::updateOrCreate(
-                ['student_id' => $reviewerId, 'assessment_id' => $assessmentId],
+                ['assessment_id' => $assessmentId, 'student_id' => $userId],
                 ['score' => $score]
             );
         }
-
-        // Redirect back to the group detail page with a success message
-        return redirect()->back()->with('success', 'Scores updated successfully!');
+    
+        // Redirect back with a success message
+        return redirect()->back()->with('success', 'Scores updated successfully.');
     }
+    
+    
 }
