@@ -10,6 +10,10 @@
             @php
                 // Get the student's score for the current assessment
                 $userMark = $assessment->assessmentMarks->firstWhere('student_id', Auth::user()->userID);
+                // Check if all peer reviews have both comment and score as null for the current assessment
+                $allPeerReviewsEmpty = $assessment->peerReviews->every(function ($peerReview) {
+                    return is_null($peerReview->comment) && is_null($peerReview->score);
+                });
             @endphp
             <p><strong>Assessment type: </strong>{{ $assessment->type->type ?? 'N/A' }}</p>
             <p><strong>Your mark: </strong>{{ $userMark->score ?? 'Pending' }}/{{ $assessment->maxScore }}</p>
@@ -18,7 +22,7 @@
             <p><strong>Number of reviews required: </strong>{{ $assessment->reviewNumber }}</p>
             <p><strong>Peer review type: </strong>{{ $assessment->peerReviewType->type ?? 'N/A' }}</p>
         </div>
-        @if (Auth::check() && Auth::user()->teacher)
+        @if (Auth::check() && Auth::user()->teacher && $allPeerReviewsEmpty)
             <div class="card-footer">
                 <a href="{{ route('assessments.edit', $assessment->id) }}" class="btn btn-info">Edit</a>
                 <form action="{{ route('assessments.destroy', $assessment->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this assessment?');">

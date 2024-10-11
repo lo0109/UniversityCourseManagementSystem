@@ -77,11 +77,21 @@ Route::middleware('auth')->group(function () {
     // Route for creating peer review groups
     Route::get('/assessments/{assessment_id}/workshops/{workshop}/create-groups', [PeerReviewController::class, 'createGroups'])->name('peer_reviews.create_groups');
     // Route for storing peer review groups
-    Route::post('/assessments/{assessment_id}/workshops/{workshop}/store-groups', [PeerReviewController::class, 'storeGroups'])->name('peer_reviews.store_groups');});
+    Route::post('/assessments/{assessment_id}/workshops/{workshop}/store-groups', [PeerReviewController::class, 'storeGroups'])->name('peer_reviews.store_groups');
+
+    //manual enroll student
+    Route::post('/workshops/enroll', [WorkshopController::class, 'enroll'])->name('workshops.enroll');
+
+    Route::get('/upload-course', function () {
+        return view('upload_course');
+    })->name('courses.upload_form');
+    
+    Route::post('/upload-course', [CourseController::class, 'uploadCourse'])->name('courses.upload');
+});
 
 // Dashboard route (only for authenticated and verified users)
 Route::get('/dashboard', function () {
-    return view('dashboard');
+return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

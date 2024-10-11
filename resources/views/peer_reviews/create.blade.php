@@ -10,6 +10,14 @@
 
     <form action="{{ route('peer_reviews.store', ['assessment_id' => $assessment->id]) }}" method="POST">
         @csrf
+
+        <!-- Display validation error message for students -->
+        @if ($errors->has('students'))
+            <div class="alert alert-danger">
+                {{ $errors->first('students') }}
+            </div>
+        @endif
+
         <div class="form-group mt-3">
             <label>Select Students to Add to the Group:</label>
             @if($students->isEmpty())

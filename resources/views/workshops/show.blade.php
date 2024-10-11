@@ -30,12 +30,35 @@
                     <tbody>
                         @foreach ($students as $enrollment)
                             <tr>
-                                <td>{{ $enrollment->student->name ??'N/A' }}</td>
+                                <td>{{ $enrollment->student->name ?? 'N/A' }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             @endif
+        </div>
+    </div>
+
+    <!-- Dropdown to enroll a new student -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Enroll a New Student</h5>
+            <!-- Form to enroll a student -->
+            <form action="{{ route('workshops.enroll') }}" method="POST">
+                @csrf
+                <div class="form-group">
+                    <label for="student_id">Select Student:</label>
+                    <select name="student_id" id="student_id" class="form-control" required>
+                        <option value="">-- Select a Student --</option>
+                        @foreach ($unenrolledStudents as $student)
+                            <option value="{{ $student->userID }}">{{ $student->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <input type="hidden" name="course_id" value="{{ $course->course_id }}">
+                <input type="hidden" name="workshop" value="{{ $workshop }}">
+                <button type="submit" class="btn btn-success mt-3">Enroll Student</button>
+            </form>
         </div>
     </div>
 

@@ -1,0 +1,29 @@
+{
+    "course": {
+        "course_id": "TRY0001",
+        "name": "Introduction to Computer Science",
+        "description": "A basic course in computer science fundamentals.",
+        "workshop": 3,
+        "online": true,
+        "teacherID": 240000
+    },
+    "assessments": [
+        {
+            "title": "Midterm Exam",
+            "instruction": "An exam covering the first half of the course material.",
+            "maxScore": 100,
+            "deadline": "2024-11-01",
+            "typeID": 2
+        }
+    ],
+    "students": [
+        {
+            "userID": "240006",
+            "workshop" : 1
+        },
+        {
+            "userID": "240007",
+            "workshop" : 1
+        }
+    ]
+}

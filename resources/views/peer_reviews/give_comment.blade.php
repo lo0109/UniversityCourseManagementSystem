@@ -26,13 +26,14 @@
     <form action="{{ route('peer_reviews.update_comment', ['assessment_id' => $assessment->id, 'review_id' => $review->id]) }}" method="POST" class="mt-4">
         @csrf
         @method('PUT')
+        <input type="hidden" name="workshop" value="{{ $review->reviewee->enrollments->where('course_id', $assessment->course_id)->first()->workshop }}">
         <div class="form-group mt-3">
             <label for="comment">Comment:</label>
             <textarea name="comment" id="comment" class="form-control" rows="5" required>{{ $review->comment }}</textarea>
         </div>
 
         <button type="submit" class="btn btn-primary mt-3">Submit Comment</button>
-        <a href="{{ route('peer_reviews.group_detail', ['assessment_id' => $assessment->id, 'group' => $review->group]) }}" class="btn btn-secondary mt-3">Cancel</a>
-    </form>
+        <a href="{{ url('assessments/' . $assessment->id . '/workshops/' . $review->reviewee->enrollments->where('course_id', $assessment->course_id)->first()->workshop . '/group/' . $review->group) }}" class="btn btn-secondary mt-3">Cancel</a>
+        </form>
 </div>
 @endsection

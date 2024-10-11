@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Course;
+use App\Models\Enrollment;
+use App\Models\Assessment;
+use Illuminate\Support\Facades\DB;
+
 
 class CourseController extends Controller
 {
@@ -201,5 +205,80 @@ class CourseController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+        /**
+     * Handle the upload of a course JSON file.
+     */
+    public function uploadCourse(Request $request)
+    {
+        // Validate the uploaded file
+        $request->validate([
+            'course_file' => 'required|file|mimes:json',
+        ]);
+
+        // Read the file content
+        $jsonData = json_decode(file_get_contents($request->file('course_file')->getPathname()), true);
+
+        if (!$jsonData) {
+            return back()->with('error', 'Invalid JSON format.');
+        }
+
+        // Validate the JSON structure
+        if (!isset($jsonData['course'], $jsonData['assessments'], $jsonData['students'])) {
+            return back()->with('error', 'JSON file is missing required sections.');
+        }
+
+        $courseData = $jsonData['course'];
+        $assessments = $jsonData['assessments'];
+        $students = $jsonData['students'];
+
+        // Check if the course already exists
+        if (Course::where('course_id', $courseData['course_id'])->exists()) {
+            return back()->with('error', 'A course with the same course ID already exists.');
+        }
+
+        // Start a database transaction
+        DB::beginTransaction();
+        try {
+            // Create the course
+            $course = Course::create([
+                'course_id' => $courseData['course_id'],
+                'name' => $courseData['name'],
+                'description' => $courseData['description'],
+                'online' => $courseData['online'] ?? false,
+                'teacherID' => $courseData['teacherID'],
+                'workshop' => $courseData['workshop'],
+            ]);
+
+            // Create assessments
+            foreach ($assessments as $assessmentData) {
+                Assessment::create([
+                    'title' => $assessmentData['title'],
+                    'instruction' => $assessmentData['instruction'],
+                    'maxScore' => $assessmentData['maxScore'],
+                    'deadline' => $assessmentData['deadline'],
+                    'typeID' => $assessmentData['typeID'],
+                    'course_id' => $course->course_id,
+                ]);
+            }
+
+            // Enroll students
+            foreach ($students as $studentData) {
+                Enrollment::create([
+                    'course_id' => $course->course_id,
+                    'student_id' => $studentData['userID'],
+                    'workshop' => $studentData['workshop'],
+                ]);
+            }
+
+            // Commit the transaction
+            DB::commit();
+            return redirect()->route('courses.upload_form')->with('success', 'Course, assessments, and students were successfully created.');
+        } catch (\Exception $e) {
+            // Rollback the transaction on error
+            DB::rollBack();
+            return back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 }

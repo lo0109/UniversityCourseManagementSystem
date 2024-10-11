@@ -11,6 +11,12 @@
                 {{ session('success') }}
             </div>
         @endif
+        @auth
+            @if (Auth::user()->teacher)
+                <!-- Button to navigate to the upload course page -->
+                <a href="{{ route('courses.upload_form') }}" class="btn btn-primary mt-3">Upload Course</a>
+            @endif
+        @endauth
 
         @if ($coursesToAdd->isEmpty())
             <p>No courses available to add.</p>

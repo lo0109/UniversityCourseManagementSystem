@@ -65,9 +65,17 @@ class PeerReviewController extends Controller
      */
     public function store(Request $request, $assessment_id)
     {
+        // Retrieve the assessment to get the reviewNumber
+        $assessment = Assessment::findOrFail($assessment_id);
         // Validate the request to ensure students are selected
         $request->validate([
-            'students' => 'required|array|min:2', // Ensure at least two students are selected
+            'students' => [
+                'required',
+                'array',
+                'min:' . $assessment->reviewNumber, // Ensure at least reviewNumber students are selected
+            ],
+        ], [
+            'students.min' => 'You must select at least ' . $assessment->reviewNumber . ' students to create the group.',
         ]);
 
         $selectedStudents = $request->input('students');
@@ -255,23 +263,23 @@ class PeerReviewController extends Controller
             'comment' => [
                 'required',
                 'string',
-                'between:10,500',
+                'between:5,500',
                 function ($attribute, $value, $fail) {
                     // Split the comment into words
                     $words = preg_split('/\s+/', trim($value));
                     $wordCount = count($words);
                     
-                    // Check if there are at least 10 words
-                    if ($wordCount < 10) {
-                        return $fail('The comment must have at least 10 words.');
+                    // Check if there are at least 5 words
+                    if ($wordCount < 5) {
+                        return $fail('The comment must have at least 5 words.');
                     }
 
                     // Count the unique words
                     $uniqueWords = count(array_unique($words));
 
                     // Check if at least half of the words are unique
-                    if ($uniqueWords < $wordCount / 2) {
-                        return $fail('At least half of the words in the comment must be unique.');
+                    if (($uniqueWords / $wordCount ) < 0.8) {
+                        return $fail('At least 80% of the words in the comment must be unique.');
                     }
                 },
             ],
@@ -283,11 +291,16 @@ class PeerReviewController extends Controller
             'comment' => $request->input('comment'),
         ]);
 
+        // Get the workshop from the request
+        $workshop = $request->input('workshop');
+
         // Redirect back to the assessment's group detail page with a success message
         return redirect()->route('peer_reviews.group_detail', [
             'assessment_id' => $assessment_id,
+            'workshop' => $workshop,
             'group' => $review->group
         ])->with('success', 'Comment updated successfully!');
+
     }
 
     // Update the score on a peer review
