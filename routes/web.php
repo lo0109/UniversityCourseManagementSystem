@@ -51,7 +51,7 @@ Route::middleware('auth')->group(function () {
     // Delete assessment
     Route::delete('/assessments/{assessment}', [AssessmentController::class, 'destroy'])->name('assessments.destroy');
     
-    //peer review group
+    //peer review group detail
     Route::get('/assessments/{assessment_id}/workshops/{workshop}/group/{group}', [PeerReviewController::class, 'showGroupDetail'])->name('peer_reviews.group_detail');
 
     //peer review

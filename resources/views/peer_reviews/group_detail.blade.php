@@ -27,7 +27,7 @@
                         ->first();
                 @endphp
                 <strong>No. of Reviews Given:</strong> {{ $reviewsWithCommentsCount }} / {{ $assessment->reviewNumber }}<br>
-                <strong> Avg score received from reviewees:</strong> {{ $reviews->avg('score') ?? 0}}<br>
+                <strong> Avg score received from reviewees:</strong> {{ number_format($reviews->avg('score'), 2) ?? 0}}<br>
                 @if($reviewerAssessmentMark && $reviewerAssessmentMark->score !== null)
                     <strong>Score:</strong> {{ $reviewerAssessmentMark->score }} / {{ $assessment->maxScore }}<br>
                 @else

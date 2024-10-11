@@ -147,7 +147,7 @@ class PeerReviewController extends Controller
     /**
      * Show detailed information about a specific peer review group.
      */
-    public function showGroupDetail($assessmentId, $group){
+    public function showGroupDetail($assessmentId, $workshop, $group) {
         // Step 1: Retrieve the assessment
         $assessment = Assessment::findOrFail($assessmentId);
     
@@ -156,12 +156,18 @@ class PeerReviewController extends Controller
     
         // Step 3: Check if the user is a teacher or a student
         if (Auth::user()->teacher) {
-            // Teacher View: Get all the peer reviews
+            // Teacher View: Get all the peer reviews specifically for the given assessment, group, and workshop
             $allPeerReviews = \DB::table('peer_reviews')
-                ->where('assessment_id', $assessmentId)
-                ->where('group', $group)
+                ->where('peer_reviews.assessment_id', $assessmentId)
+                ->where('peer_reviews.group', $group)
                 ->join('users as reviewers', 'peer_reviews.reviewer_id', '=', 'reviewers.userID')
                 ->join('users as reviewees', 'peer_reviews.reviewee_id', '=', 'reviewees.userID')
+                ->whereExists(function ($query) use ($workshop) {
+                    $query->select(\DB::raw(1))
+                        ->from('enrollments')
+                        ->whereColumn('enrollments.student_id', 'peer_reviews.reviewer_id')
+                        ->where('enrollments.workshop', $workshop);
+                })
                 ->select(
                     'peer_reviews.*',
                     'reviewers.name as reviewer_name',
@@ -186,10 +192,10 @@ class PeerReviewController extends Controller
                 $page,
                 ['path' => LengthAwarePaginator::resolveCurrentPath()]
             );
-    
+            
             $groupedReviews = collect($paginatedPeerReviews->items())->groupBy('reviewer_id');
-    
-    
+            
+            // dd($allPeerReviews,$groupedReviews, $paginatedPeerReviews);
             // Empty collections for student-related data in teacher view
             $studentReviews = collect();
             $reviewsForUser = collect();
@@ -198,31 +204,39 @@ class PeerReviewController extends Controller
             // Student View: Get peer reviews where the user is the reviewer or reviewee
             $studentReviews = PeerReview::where('assessment_id', $assessmentId)
                 ->where('group', $group)
+                ->whereHas('reviewer.enrollments', function ($query) use ($workshop) {
+                    $query->where('workshop', $workshop);
+                })
                 ->where('reviewer_id', $loggedInUserID)
                 ->with(['reviewer', 'reviewee']) // Eager load relationships
                 ->get();
-
+    
             $reviewsForUser = PeerReview::where('assessment_id', $assessmentId)
                 ->where('group', $group)
+                ->whereHas('reviewee.enrollments', function ($query) use ($workshop) {
+                    $query->where('workshop', $workshop);
+                })
                 ->where('reviewee_id', $loggedInUserID)
                 ->with(['reviewer', 'reviewee']) // Eager load relationships
                 ->get();
-        
-                // Empty collections for teacher-related data in student view
-                $groupedReviews = collect();
-                $paginatedPeerReviews = collect();
-            }
-        
-            // Step 4: Pass the data to the view
-            return view('peer_reviews.group_detail', [
-                'assessment' => $assessment,
-                'studentReviews' => $studentReviews,
-                'reviewsForUser' => $reviewsForUser,
-                'groupedReviews' => $groupedReviews,
-                'paginatedPeerReviews' => $paginatedPeerReviews,
-                'group' => $group,
-            ]);
+    
+            // Empty collections for teacher-related data in student view
+            $groupedReviews = collect();
+            $paginatedPeerReviews = collect();
+        }
+    
+        // Step 4: Pass the data to the view
+        return view('peer_reviews.group_detail', [
+            'assessment' => $assessment,
+            'studentReviews' => $studentReviews,
+            'reviewsForUser' => $reviewsForUser,
+            'groupedReviews' => $groupedReviews,
+            'paginatedPeerReviews' => $paginatedPeerReviews,
+            'group' => $group,
+            'workshop' => $workshop,
+        ]);
     }
+    
 
     public function giveComment($assessment_id, $review_id)
     {
@@ -363,6 +377,11 @@ class PeerReviewController extends Controller
                 $groups[$groupIndex] = [];
             }
 
+            // Check if the remaining number of students is less than the group size
+            if (count($students) < $request->input('group_size') && !empty($students)) {
+                break; // Exit the loop if there are not enough students to form a full group
+            }
+
             // Extract the first student from the list
             $studentId = array_shift($students);
 
@@ -380,10 +399,10 @@ class PeerReviewController extends Controller
                 $groupIndex++;
             }
         }
-
         // Handle any remaining students
         foreach ($students as $studentId) {
             $addedToGroup = false;
+            // Attempt to add the student to the first group that does not have them in the last review
             foreach ($groups as $index => $group) {
                 if (!$isInSameGroupLastTime($studentId, $group)) {
                     $groups[$index][] = $studentId;
@@ -392,13 +411,16 @@ class PeerReviewController extends Controller
                 }
             }
             if (!$addedToGroup) {
-                // Add the student to a new group if they couldn't be added to any existing group
-                $groups[$groupIndex][] = $studentId;
-                $groupIndex++;
+                // If not added to an existing group, start again from the first group
+                foreach ($groups as $index => $group) {
+                    // Add without checking the last group history, to ensure all students are assigned
+                    $groups[$index][] = $studentId;
+                    break; // Exit the loop once the student is added
+                }
             }
         }
-        
-        // Save each group in the PeerReview table
+
+        // Save each group in the PeerReview table with new reviewer assignments
         foreach ($groups as $groupNumber => $groupMembers) {
             foreach ($groupMembers as $reviewerId) {
                 foreach ($groupMembers as $revieweeId) {
@@ -414,7 +436,6 @@ class PeerReviewController extends Controller
                 }
             }
         }
-
         return redirect()->route('assessments.show', $assessment_id)->with('success', 'Groups created successfully.');
     
     }

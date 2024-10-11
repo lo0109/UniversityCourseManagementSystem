@@ -99,8 +99,8 @@
                             @foreach ($workshops as $group)
                                 <li>
                                     Group {{ $group['group'] }} ({{ $group['student_count'] }} members)
-                                    <a href="{{ route('peer_reviews.group_detail', ['assessment_id' => $assessment->id, 'group' => $group['group']]) }}" class="btn btn-sm btn-primary">View</a>
-                                </li>
+                                        <a href="{{ route('peer_reviews.group_detail', ['assessment_id' => $assessment->id, 'workshop' => $studentWorkshop, 'group' => $group['group']]) }}" class="btn btn-sm btn-primary">View</a>
+                                    </li>
                             @endforeach
                         </ul>
                     @else
