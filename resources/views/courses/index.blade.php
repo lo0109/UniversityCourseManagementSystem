@@ -32,8 +32,10 @@
                             </td>
                         </tr>
                     @endforeach
-                </tbody>
+                </tbody>    
             </table>
         @endif
+    <!-- Display pagination links -->
+    {{ $courses->links() }}     
     </div>
 @endsection

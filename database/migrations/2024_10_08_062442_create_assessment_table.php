@@ -20,9 +20,7 @@ return new class extends Migration
             $table->tinyInteger('score')->nullable();
             $table->tinyInteger('maxScore');
             $table->dateTime('deadline');
-            $table->tinyInteger('reviewNumber');
-            $table->unsignedBigInteger('student_id')->nullable();
-            $table->foreign('student_id')->references('userID')->on('users')->onDelete('cascade');
+            $table->tinyInteger('reviewNumber')->nullable();
             $table->foreign('course_id')->references('course_id')->on('courses')->onDelete('cascade');
             $table->foreignId('peer_review_type_id')->nullable()->constrained('peer_review_types')->onDelete('cascade');
             $table->timestamps();

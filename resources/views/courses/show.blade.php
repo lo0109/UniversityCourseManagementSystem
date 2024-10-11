@@ -11,6 +11,7 @@
             <h5 class="card-title">Course ID: {{ $course->course_id }}</h5>
             <p class="card-text">{{ $course->description }}</p>
             <p><strong>Online: </strong>{{ $course->online ? 'Yes' : 'No' }}</p>
+            <p><strong>Teacher: </strong>{{ $course->teacher->name ?? 'No teacher assigned'}}</p>
             <p><strong>How many Workshops a week: </strong>{{ $course->workshop }}</p>
             
             <!-- Display the number of people enrolled in the course -->
@@ -124,7 +125,7 @@
                 <tr>
                     <th>Assessment Type</th>
                     <th>Title</th>
-                    <th>Max Score</th>
+                    <th>Max Mark</th>
                     <th>Due Date</th>
                     <th>Mark</th>
                     <th>Action</th>
@@ -139,7 +140,11 @@
                         <td>{{ $assessment->deadline }}</td>
                         <td>
                             @if (Auth::check() && !Auth::user()->teacher)
-                                {{ $assessment->score ?? 'Not graded' }}
+                                <!-- Show the student's mark for the assessment -->
+                                @php
+                                    $studentMark = $assessment->assessmentMarks->where('student_id', Auth::user()->userID)->first();
+                                @endphp
+                                {{ $studentMark ? $studentMark->score . ' / ' . $assessment->maxScore : 'Not graded' }}
                             @else
                                 N/A
                             @endif

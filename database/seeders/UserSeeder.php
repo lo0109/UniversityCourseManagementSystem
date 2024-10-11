@@ -52,5 +52,12 @@ class UserSeeder extends Seeder
             'teacher' => true,  // teacher
             'remember_token' => Str::random(10),  // Generate a random remember token
         ]);
+        DB::table('users')->insert([
+            'userID' => $userIDBase++,  // Increment the userID
+            'name' => 'Teacher6',
+            'password' => bcrypt('password'),  // Hash the password
+            'teacher' => true,  // student
+            'remember_token' => Str::random(10),  // Generate a random remember token
+        ]);
     }
 }

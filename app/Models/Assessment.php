@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Course;
 use App\Models\AssessmentType;
 use App\Models\PeerReviewType;
+use App\Models\AssessmentMark;
 
 class Assessment extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['course_id', 'typeID', 'title', 'instruction','maxScore', 'deadline', 'reviewNumber', 'student_id', 'peer_review_type_id'];
+    protected $fillable = ['course_id', 'typeID', 'title', 'instruction','maxScore', 'deadline', 'reviewNumber', 'peer_review_type_id'];
     
     function peerReviews() {
         return $this->hasMany(\App\Models\PeerReview::class, 'assessment_id');
@@ -30,4 +31,8 @@ class Assessment extends Model
         return $this->belongsTo(PeerReviewType::class, 'peer_review_type_id');
     }
 
+    public function assessmentMarks()
+    {
+        return $this->hasMany(AssessmentMark::class, 'assessment_id');
+    }
 }

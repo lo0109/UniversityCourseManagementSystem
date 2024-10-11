@@ -8,6 +8,7 @@
 
     <form action="{{ route('assessments.store', ['course' => $course->course_id]) }}" method="POST">
         @csrf
+        <input type="hidden" name="course_id" value="{{ $course->course_id }}">
         <div class="form-group mt-3">
             <label for="title">Title:</label>
             <input type="text" name="title" id="title" class="form-control" required>
@@ -20,7 +21,8 @@
 
         <div class="form-group mt-3">
             <label for="deadline">Deadline:</label>
-            <input type="date" name="deadline" id="deadline" class="form-control" required>
+            <input type="datetime-local" class="form-control" id="deadline" name="deadline"
+                   value="{{ old('deadline', isset($assessment->deadline) ? date('Y-m-d\TH:i', strtotime($assessment->deadline)) : '') }}" required>
         </div>
 
         <div class="form-group mt-3">

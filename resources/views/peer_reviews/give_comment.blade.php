@@ -9,21 +9,30 @@
     <div class="card">
         <div class="card-body">
             <p><strong>Reviewee:</strong> {{ $review->reviewee->name ?? 'N/A' }}</p>
+            <p><strong>Current Score:</strong> {{ $review->score !== null ? $review->score : 'Not given' }}</p>
             <p><strong>Current Comment:</strong> {{ $review->comment ?? 'No comment' }}</p>
         </div>
     </div>
-
+    <!-- Display Validation Errors -->
+    @if ($errors->any())
+        <div class="alert alert-danger mt-4">
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
     <form action="{{ route('peer_reviews.update_comment', ['assessment_id' => $assessment->id, 'review_id' => $review->id]) }}" method="POST" class="mt-4">
         @csrf
         @method('PUT')
-
-        <div class="form-group">
+        <div class="form-group mt-3">
             <label for="comment">Comment:</label>
             <textarea name="comment" id="comment" class="form-control" rows="5" required>{{ $review->comment }}</textarea>
         </div>
 
         <button type="submit" class="btn btn-primary mt-3">Submit Comment</button>
-        <a href="{{ route('assessments.show', $assessment->id) }}" class="btn btn-secondary mt-3">Cancel</a>
+        <a href="{{ route('peer_reviews.group_detail', ['assessment_id' => $assessment->id, 'group' => $review->group]) }}" class="btn btn-secondary mt-3">Cancel</a>
     </form>
 </div>
 @endsection

@@ -29,7 +29,7 @@ class AssessmentSeeder extends Seeder
                 'deadline' => now()->addWeeks(2),  // Default deadline 2 weeks from now
                 'reviewNumber' => 2,  // Default number of reviews
                 'typeID' => 1,  // Assuming '1' is the type for Peer Review
-                'peer_review_type_id' => PeerReviewType::inRandomOrder()->first()->id, // Random peer review type
+                'peer_review_type_id' => 1, //  peer review type 1
             ]);
         }
     }

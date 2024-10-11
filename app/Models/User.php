@@ -6,6 +6,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Enrollment;
+use App\Models\AssessmentMark;
 
 class User extends Authenticatable
 {
@@ -60,4 +62,8 @@ class User extends Authenticatable
         return $this->hasMany(Enrollment::class, 'student_id', 'userID');
     }
     
+    public function assessmentMarks(){
+        return $this->hasMany(AssessmentMark::class, 'student_id');
+    }
+
 }

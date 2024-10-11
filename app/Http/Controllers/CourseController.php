@@ -17,16 +17,19 @@ class CourseController extends Controller
         $user = Auth::user();
 
         // Check if the user is a teacher or student
-        if ($user->teacher) {
-            // Fetch courses taught by the teacher
-            $courses = $user->taughtCourses;
-        } else {
-            // Fetch courses the student is enrolled in
-            $courses = $user->enrolledCourses;
+        if ($user)
+            {if ($user->teacher) {
+                // Fetch courses taught by the teacher
+                $courses = $user->taughtCourses()->paginate(5);
+            } else {
+                // Fetch courses the student is enrolled in
+                $courses = $user->enrolledCourses()->paginate(5);
+            }
+            // Return the view with the courses
+            return view('courses.index', compact('courses'));
         }
-
-        // Return the view with the courses
-        return view('courses.index', compact('courses'));
+        // If the user is not authenticated, redirect to the login page
+        return redirect()->route('login')->with('error', 'You must be logged in to view courses.');
     }
 
     /**
@@ -42,10 +45,10 @@ class CourseController extends Controller
         // Check if the user is a teacher
         if ($user->teacher) {
             // If user is a teacher, show courses with no assigned teacher (i.e., teacherID is null)
-            $coursesToAdd = Course::whereNull('teacherID')->get();
+            $coursesToAdd = Course::whereNull('teacherID')->paginate(5);
         } else {
             // If user is a student, show courses they are not enrolled
-            $coursesToAdd = Course::whereNotIn('course_id', $enrolledOrTaughtCourses)->get();
+            $coursesToAdd = Course::whereNotIn('course_id', $enrolledOrTaughtCourses)->paginate(5);
         }
 
         return view('courses.add', compact('coursesToAdd'));

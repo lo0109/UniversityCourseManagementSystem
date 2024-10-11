@@ -52,7 +52,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/assessments/{assessment}', [AssessmentController::class, 'destroy'])->name('assessments.destroy');
     
     //peer review group
-    Route::get('assessments/{assessment_id}/groups/{group}', [PeerReviewController::class, 'showGroupDetail'])->name('peer_reviews.group_detail');
+    Route::get('/assessments/{assessment_id}/workshops/{workshop}/group/{group}', [PeerReviewController::class, 'showGroupDetail'])->name('peer_reviews.group_detail');
 
     //peer review
     Route::get('/assessments/{assessment_id}/peer-reviews/{review_id}/comment', [PeerReviewController::class, 'giveComment'])->name('peer_reviews.give_comment');
@@ -63,6 +63,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/assessments/{assessment_id}/peer-reviews/{review_id}/score', [PeerReviewController::class, 'giveScore'])->name('peer_reviews.give_score');
     Route::put('/assessments/{assessment_id}/peer-reviews/{review_id}/score', [PeerReviewController::class, 'updateScore'])->name('peer_reviews.update_score');
 
+    // Update the scores for an assessment
+    Route::put('/assessments/{assessment}/update-scores', [AssessmentController::class, 'updateScores'])->name('assessments.update_scores');
+
     // Create an assessment for a specific course
     Route::get('/courses/{course}/assessments/create', [AssessmentController::class, 'create'])->name('assessments.create');
     Route::post('/courses/{course}/assessments', [AssessmentController::class, 'store'])->name('assessments.store');
@@ -70,7 +73,11 @@ Route::middleware('auth')->group(function () {
     // Create a peer review group
     Route::get('assessments/{assessment_id}/peer_reviews/create', [PeerReviewController::class, 'create'])->name('peer_reviews.create');
     Route::post('assessments/{assessment_id}/peer_reviews', [PeerReviewController::class, 'store'])->name('peer_reviews.store');
-});
+
+    // Route for creating peer review groups
+    Route::get('/assessments/{assessment_id}/workshops/{workshop}/create-groups', [PeerReviewController::class, 'createGroups'])->name('peer_reviews.create_groups');
+    // Route for storing peer review groups
+    Route::post('/assessments/{assessment_id}/workshops/{workshop}/store-groups', [PeerReviewController::class, 'storeGroups'])->name('peer_reviews.store_groups');});
 
 // Dashboard route (only for authenticated and verified users)
 Route::get('/dashboard', function () {
