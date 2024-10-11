@@ -269,7 +269,7 @@ class PeerReviewController extends Controller
                     $words = preg_split('/\s+/', trim($value));
                     $wordCount = count($words);
                     
-                    // Check if there are at least 5 words
+                    // Check if there are at least 10 words
                     if ($wordCount < 5) {
                         return $fail('The comment must have at least 5 words.');
                     }
@@ -319,9 +319,10 @@ class PeerReviewController extends Controller
     }
 
 
-    /**
-     * Show the form for creating groups for a specific assessment and workshop.
-     */
+    // /**
+    //  * Show the form for creating groups for a specific assessment and workshop.
+    //  */
+    
     public function createGroups($assessment_id, $workshop)
     {
         // Fetch the assessment
@@ -338,101 +339,110 @@ class PeerReviewController extends Controller
         return view('peer_reviews.create_groups', compact('assessment', 'workshop', 'students'));
     }
 
+
     public function storeGroups(Request $request, $assessment_id, $workshop)
     {
         $assessment = Assessment::findOrFail($assessment_id);
-
+    
         // Validate the request input for group size
         $request->validate([
             'group_size' => 'required|integer|min:' . ($assessment->reviewNumber + 1),
         ]);
-
+    
         // Get all students in the specified workshop
         $students = Enrollment::where('course_id', $assessment->course_id)
             ->where('workshop', $workshop)
             ->pluck('student_id')
             ->toArray();
-
-        // Get the last peer review records for this assessment, grouped by group number
-        $lastPeerReviews = PeerReview::where('assessment_id', $assessment_id)
-            ->get()
-            ->groupBy('group')
-            ->map(function ($reviews) {
-                return $reviews->pluck('reviewee_id')->toArray();
-            })
-            ->toArray();
-
+    
+        // Get the last peer review records for the previous assessment
+        $previousAssessment = Assessment::where('course_id', $assessment->course_id)
+            ->where('id', '<', $assessment->id)
+            ->orderBy('id', 'desc')
+            ->first();
+    
+        $lastPeerReviews = [];
+        if ($previousAssessment) {
+            $lastPeerReviews = PeerReview::where('assessment_id', $previousAssessment->id)
+                ->get()
+                ->groupBy('group')
+                ->map(function ($reviews) {
+                    return $reviews->pluck('reviewee_id')->toArray();
+                })
+                ->toArray();
+        }
+    
         // Shuffle the students to ensure randomness
         shuffle($students);
         $groups = [];
         $groupIndex = 0;
-
+    
         // Function to check if a student was in the same group last time
         $isInSameGroupLastTime = function ($studentId, $currentGroup) use ($lastPeerReviews) {
-            // If lastPeerReviews is empty, return false
             if (empty($lastPeerReviews)) {
                 return false;
             }
             foreach ($currentGroup as $memberId) {
                 foreach ($lastPeerReviews as $lastGroupMembers) {
                     if (in_array($studentId, $lastGroupMembers) && in_array($memberId, $lastGroupMembers)) {
-                        return true; // The student was in the same group as a current group member last time
+                        return true;
                     }
                 }
             }
             return false;
         };
-
+    
         // Create groups
-        while (!empty($students)) {
-            // If the current group does not exist, initialize it
+        $retryCount = 0;
+        $maxRetries = count($students) * 2;
+        while (!empty($students) && $retryCount < $maxRetries) {
             if (!isset($groups[$groupIndex])) {
                 $groups[$groupIndex] = [];
             }
-
-            // Check if the remaining number of students is less than the group size
+    
             if (count($students) < $request->input('group_size') && !empty($students)) {
-                break; // Exit the loop if there are not enough students to form a full group
+                break;
             }
-
-            // Extract the first student from the list
+    
             $studentId = array_shift($students);
-
-            // If the student was in the same group as any of the current group members last time, push to the end of the list
+    
             if ($isInSameGroupLastTime($studentId, $groups[$groupIndex])) {
-                $students[] = $studentId; // Push to the end of the list
-                continue; // Skip to the next iteration
+                $students[] = $studentId;
+                $retryCount++;
+                continue;
             }
-
-            // Add the student to the current group
+    
             $groups[$groupIndex][] = $studentId;
-
-            // If the group reaches the specified group size, move to the next group
+    
             if (count($groups[$groupIndex]) >= $request->input('group_size')) {
                 $groupIndex++;
             }
+            $retryCount = 0; // Reset retry count when a student is successfully added
         }
+    
         // Handle any remaining students
         foreach ($students as $studentId) {
+            // Sort groups by size
+            usort($groups, function($a, $b) {
+                return count($a) - count($b);
+            });
+    
             $addedToGroup = false;
-            // Attempt to add the student to the first group that does not have them in the last review
-            foreach ($groups as $index => $group) {
+            foreach ($groups as &$group) {
                 if (!$isInSameGroupLastTime($studentId, $group)) {
-                    $groups[$index][] = $studentId;
+                    $group[] = $studentId;
                     $addedToGroup = true;
-                    break; // Exit the inner loop if the student is added
+                    break;
                 }
             }
+            unset($group);
+    
             if (!$addedToGroup) {
-                // If not added to an existing group, start again from the first group
-                foreach ($groups as $index => $group) {
-                    // Add without checking the last group history, to ensure all students are assigned
-                    $groups[$index][] = $studentId;
-                    break; // Exit the loop once the student is added
-                }
+                // Add to the group with the least members
+                $groups[array_key_first($groups)][] = $studentId;
             }
         }
-
+    
         // Save each group in the PeerReview table with new reviewer assignments
         foreach ($groups as $groupNumber => $groupMembers) {
             foreach ($groupMembers as $reviewerId) {
@@ -449,9 +459,127 @@ class PeerReviewController extends Controller
                 }
             }
         }
-        return redirect()->route('assessments.show', $assessment_id)->with('success', 'Groups created successfully.');
     
+        return redirect()->route('assessments.show', $assessment_id)->with('success', 'Groups created successfully.');
     }
+    
+
+
+
+    // public function storeGroups(Request $request, $assessment_id, $workshop)
+    // {
+    //     $assessment = Assessment::findOrFail($assessment_id);
+
+    //     // Validate the request input for group size
+    //     $request->validate([
+    //         'group_size' => 'required|integer|min:' . ($assessment->reviewNumber + 1),
+    //     ]);
+
+    //     // Get all students in the specified workshop
+    //     $students = Enrollment::where('course_id', $assessment->course_id)
+    //         ->where('workshop', $workshop)
+    //         ->pluck('student_id')
+    //         ->toArray();
+
+    //     // Get the last peer review records for this assessment, grouped by group number
+    //     $lastPeerReviews = PeerReview::where('assessment_id', $assessment_id)
+    //         ->get()
+    //         ->groupBy('group')
+    //         ->map(function ($reviews) {
+    //             return $reviews->pluck('reviewee_id')->toArray();
+    //         })
+    //         ->toArray();
+
+    //     // Shuffle the students to ensure randomness
+    //     shuffle($students);
+    //     $groups = [];
+    //     $groupIndex = 0;
+
+    //     // Function to check if a student was in the same group last time
+    //     $isInSameGroupLastTime = function ($studentId, $currentGroup) use ($lastPeerReviews) {
+    //         // If lastPeerReviews is empty, return false
+    //         if (empty($lastPeerReviews)) {
+    //             return false;
+    //         }
+    //         foreach ($currentGroup as $memberId) {
+    //             foreach ($lastPeerReviews as $lastGroupMembers) {
+    //                 if (in_array($studentId, $lastGroupMembers) && in_array($memberId, $lastGroupMembers)) {
+    //                     return true; // The student was in the same group as a current group member last time
+    //                 }
+    //             }
+    //         }
+    //         return false;
+    //     };
+
+    //     // Create groups
+    //     while (!empty($students)) {
+    //         // If the current group does not exist, initialize it
+    //         if (!isset($groups[$groupIndex])) {
+    //             $groups[$groupIndex] = [];
+    //         }
+
+    //         // Check if the remaining number of students is less than the group size
+    //         if (count($students) < $request->input('group_size') && !empty($students)) {
+    //             break; // Exit the loop if there are not enough students to form a full group
+    //         }
+
+    //         // Extract the first student from the list
+    //         $studentId = array_shift($students);
+
+    //         // If the student was in the same group as any of the current group members last time, push to the end of the list
+    //         if ($isInSameGroupLastTime($studentId, $groups[$groupIndex])) {
+    //             $students[] = $studentId; // Push to the end of the list
+    //             continue; // Skip to the next iteration
+    //         }
+
+    //         // Add the student to the current group
+    //         $groups[$groupIndex][] = $studentId;
+
+    //         // If the group reaches the specified group size, move to the next group
+    //         if (count($groups[$groupIndex]) >= $request->input('group_size')) {
+    //             $groupIndex++;
+    //         }
+    //     }
+    //     // Handle any remaining students
+    //     foreach ($students as $studentId) {
+    //         $addedToGroup = false;
+    //         // Attempt to add the student to the first group that does not have them in the last review
+    //         foreach ($groups as $index => $group) {
+    //             if (!$isInSameGroupLastTime($studentId, $group)) {
+    //                 $groups[$index][] = $studentId;
+    //                 $addedToGroup = true;
+    //                 break; // Exit the inner loop if the student is added
+    //             }
+    //         }
+    //         if (!$addedToGroup) {
+    //             // If not added to an existing group, start again from the first group
+    //             foreach ($groups as $index => $group) {
+    //                 // Add without checking the last group history, to ensure all students are assigned
+    //                 $groups[$index][] = $studentId;
+    //                 break; // Exit the loop once the student is added
+    //             }
+    //         }
+    //     }
+
+    //     // Save each group in the PeerReview table with new reviewer assignments
+    //     foreach ($groups as $groupNumber => $groupMembers) {
+    //         foreach ($groupMembers as $reviewerId) {
+    //             foreach ($groupMembers as $revieweeId) {
+    //                 if ($reviewerId !== $revieweeId) {
+    //                     PeerReview::create([
+    //                         'assessment_id' => $assessment_id,
+    //                         'reviewer_id' => $reviewerId,
+    //                         'reviewee_id' => $revieweeId,
+    //                         'group' => $groupNumber + 1,
+    //                         'peer_review_type_id' => $assessment->peer_review_type_id,
+    //                     ]);
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     return redirect()->route('assessments.show', $assessment_id)->with('success', 'Groups created successfully.');
+    
+    // }
 
 
 }
